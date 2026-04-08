@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B1120">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Complai">
+<meta name="description" content="NDIS AI Documentation — generate compliant progress notes, incident reports and care plans">
+<title>Complai — NDIS AI Docs</title>
+
+<!-- PWA Manifest inline via data URI -->
+<link rel="manifest" href="data:application/manifest+json,{
+  %22name%22:%22Complai%20%E2%80%94%20NDIS%20AI%20Documentation%22,
+  %22short_name%22:%22Complai%22,
+  %22description%22:%22Generate%20audit-ready%20NDIS%20progress%20notes%2C%20incident%20reports%20and%20care%20plans%22,
+  %22start_url%22:%22.%22,
+  %22display%22:%22standalone%22,
+  %22background_color%22:%220B1120%22,
+  %22theme_color%22:%220B1120%22,
+  %22orientation%22:%22portrait%22,
+  %22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20512%20512'%3E%3Crect%20width%3D'512'%20height%3D'512'%20rx%3D'80'%20fill%3D'%230B1120'%2F%3E%3Crect%20x%3D'60'%20y%3D'60'%20width%3D'392'%20height%3D'392'%20rx%3D'60'%20fill%3D'%23111827'%2F%3E%3Ctext%20x%3D'256'%20y%3D'340'%20text-anchor%3D'middle'%20font-size%3D'240'%20font-weight%3D'900'%20font-family%3D'Arial'%20fill%3D'%2300D4FF'%3EC%3C%2Ftext%3E%3C%2Fsvg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22,%22purpose%22:%22any%20maskable%22}]
+}">
+
+<!-- Apple touch icon -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230B1120'/><text x='90' y='130' text-anchor='middle' font-size='110' font-weight='900' font-family='Arial' fill='%2300D4FF'>C</text></svg>">
+
+<style>
+/* ══ Reset & tokens ══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0B1120;--surf:#111827;--card:#1A2235;--bdr:#1E2D45;
+  --accent:#00D4FF;--grn:#10B981;--amb:#F59E0B;--red:#EF4444;
+  --txt:#F0F4FF;--muted:#64748B;--soft:#94A3B8;
+  --nav:56px;
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+  --r:12px;--r-sm:8px;--r-lg:16px;
+}
+html{background:var(--bg);height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+  color:var(--txt);background:var(--bg);
+  min-height:100%;
+  padding-bottom:calc(var(--nav) + var(--sab) + 8px);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overscroll-behavior:none;
+}
+
+/* ══ Topbar ══════════════════════════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:var(--surf);
+  border-bottom:1px solid var(--bdr);
+  padding:calc(var(--sat) + 10px) calc(16px + var(--sar)) 10px calc(16px + var(--sal));
+  display:flex;align-items:center;justify-content:space-between;
+  /* GPU layer for smooth scroll */
+  will-change:transform;
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#00D4FF 0%,#0891B2 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:#000;
+  box-shadow:0 2px 8px #00D4FF30;
+}
+.brand-name{font-size:18px;font-weight:700;color:var(--txt);letter-spacing:-.3px;line-height:1.1;}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.status{display:flex;align-items:center;gap:6px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pulse-dot 2.5s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.5;}}
+.dot-lbl{font-size:11px;color:var(--muted);}
+
+/* ══ Install banner ══════════════════════════════════════════════════════ */
+.install-bar{
+  display:none;
+  background:linear-gradient(135deg,#00D4FF12,#0891B220);
+  border-bottom:1px solid #00D4FF30;
+  padding:10px 16px;
+  align-items:center;justify-content:space-between;gap:10px;
+}
+.install-bar.show{display:flex;}
+.install-txt{font-size:12px;color:var(--soft);flex:1;}
+.install-txt strong{color:var(--accent);}
+.install-btn{padding:7px 14px;background:var(--accent);color:#000;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;}
+.install-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;}
+
+/* ══ Page content ════════════════════════════════════════════════════════ */
+.page{padding:14px calc(16px + var(--sar)) 14px calc(16px + var(--sal));}
+
+/* ══ Bottom nav ══════════════════════════════════════════════════════════ */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav) + var(--sab));
+  background:var(--surf);
+  border-top:1px solid var(--bdr);
+  display:flex;align-items:flex-start;padding-top:6px;
+  padding-left:var(--sal);padding-right:var(--sar);
+  z-index:100;
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-family:inherit;
+  padding:6px 4px;
+  transition:color .2s;
+  -webkit-user-select:none;user-select:none;
+}
+.nav-btn.active{color:var(--accent);}
+.nav-btn:active{opacity:.7;}
+.nav-icon{font-size:21px;line-height:1.1;transition:transform .2s;}
+.nav-btn.active .nav-icon{transform:scale(1.1);}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.02em;}
+
+/* ══ Cards ═══════════════════════════════════════════════════════════════ */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r-lg);padding:16px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;}
+
+/* ══ Fields ══════════════════════════════════════════════════════════════ */
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.inp{
+  display:block;width:100%;
+  padding:13px 14px;
+  background:var(--bg);
+  border:1.5px solid var(--bdr);
+  border-radius:var(--r);
+  color:var(--txt);
+  font-family:inherit;font-size:16px;
+  outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  -webkit-appearance:none;appearance:none;
+  /* Prevent zoom on iOS */
+  font-size:max(16px,1rem);
+}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px #00D4FF15;}
+textarea.inp{resize:none;line-height:1.6;}
+select.inp{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ══ Buttons ═════════════════════════════════════════════════════════════ */
+.btn{
+  display:block;width:100%;padding:15px;
+  border:none;border-radius:var(--r);
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:opacity .15s,transform .1s;
+  -webkit-appearance:none;text-align:center;
+  margin-top:4px;
+  -webkit-user-select:none;user-select:none;
+}
+.btn:disabled{opacity:.38;}
+.btn:not(:disabled):active{opacity:.82;transform:scale(.98);}
+.btn-primary{background:var(--accent);color:#000;box-shadow:0 4px 14px #00D4FF25;}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 14px #EF444425;}
+.btn-ghost{
+  display:inline-block;width:auto;flex:1;
+  background:transparent;color:var(--soft);
+  border:1px solid var(--bdr);
+  padding:11px 16px;border-radius:var(--r-sm);
+  font-size:13px;cursor:pointer;font-family:inherit;text-align:center;
+}
+.btn-back{
+  display:flex;align-items:center;gap:6px;
+  background:none;border:none;color:var(--soft);
+  font-size:13px;cursor:pointer;font-family:inherit;
+  padding:0 0 14px;
+}
+.btn-row{display:flex;gap:10px;margin-top:12px;}
+
+/* ══ Alerts ══════════════════════════════════════════════════════════════ */
+.alert{padding:11px 13px;border-radius:var(--r-sm);font-size:12px;line-height:1.55;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;}
+.a-accent{background:#00D4FF0e;border:1px solid #00D4FF33;color:var(--accent);}
+.a-red{background:#EF444412;border:1px solid #EF444433;color:#FCA5A5;}
+.a-grn{background:#10B98112;border:1px solid #10B98133;color:#6EE7B7;}
+.a-amb{background:#F59E0B12;border:1px solid #F59E0B33;color:#FCD34D;}
+
+/* ══ Result box ══════════════════════════════════════════════════════════ */
+.result-box{
+  background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r-sm);
+  padding:14px;font-size:11.5px;line-height:1.85;color:var(--txt);
+  white-space:pre-wrap;font-family:'Courier New',monospace;
+  max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+
+/* ══ Spell banner ════════════════════════════════════════════════════════ */
+.spell-banner{background:#00D4FF08;border:1px solid #00D4FF33;border-radius:var(--r-sm);padding:10px 12px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;}
+.spell-title{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px;}
+.spell-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.spell-chip{font-size:10px;padding:2px 8px;border-radius:10px;background:#00D4FF15;border:1px solid #00D4FF22;color:var(--soft);}
+.s-old{text-decoration:line-through;color:var(--muted);}
+.s-arr{color:var(--accent);margin:0 2px;}
+
+/* ══ Score ring block ════════════════════════════════════════════════════ */
+.score-block{display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--bdr);margin-bottom:12px;}
+.score-title{font-size:16px;font-weight:700;color:var(--txt);}
+.score-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* ══ Check pills & rows ══════════════════════════════════════════════════ */
+.check-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.cpill{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.cp-pass{background:#10B98118;color:var(--grn);border:1px solid #10B98140;}
+.cp-fail{background:#EF444418;color:var(--red);border:1px solid #EF444440;}
+.check-rows{margin-top:4px;}
+.check-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(30,45,69,.5);}
+.check-row:last-child{border-bottom:none;}
+.c-icon{font-size:14px;font-weight:700;flex-shrink:0;width:18px;text-align:center;margin-top:1px;}
+.c-lbl{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.c-note{font-size:11px;color:var(--muted);line-height:1.5;}
+.c-tip{margin-top:5px;padding:5px 9px;background:#F59E0B12;border-radius:6px;border:1px solid #F59E0B22;font-size:11px;color:var(--amb);line-height:1.5;}
+.cat-b{display:inline-block;font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:4px;}
+.c-id{background:#00D4FF18;color:#00D4FF;}
+.c-cq{background:#7C3AED18;color:#A78BFA;}
+.c-sc{background:#EF444418;color:#EF4444;}
+.c-lg{background:#10B98118;color:#10B981;}
+.expand-btn{width:100%;padding:10px;background:transparent;border:1px solid var(--bdr);border-radius:var(--r-sm);color:var(--soft);font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:10px;}
+.check-footer{margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);font-size:12px;line-height:1.55;}
+
+/* ══ Severity cards ══════════════════════════════════════════════════════ */
+.sev-opts{display:flex;flex-direction:column;gap:8px;}
+.sev-opt{padding:13px 14px;border-radius:var(--r-sm);border:1.5px solid var(--bdr);cursor:pointer;font-size:13px;color:var(--soft);background:var(--bg);transition:all .15s;-webkit-user-select:none;user-select:none;}
+.sev-low{border-color:var(--grn);color:var(--grn);background:#10B98110;}
+.sev-med{border-color:var(--amb);color:var(--amb);background:#F59E0B10;}
+.sev-high{border-color:var(--red);color:var(--red);background:#EF444410;}
+
+/* ══ Offline banner ══════════════════════════════════════════════════════ */
+.offline-bar{display:none;background:#F59E0B;padding:6px 16px;text-align:center;font-size:12px;font-weight:600;color:#000;}
+.offline-bar.show{display:block;}
+
+/* ══ Animations ══════════════════════════════════════════════════════════ */
+.fade{animation:fadeUp .2s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+/* Reduce motion */
+@media(prefers-reduced-motion:reduce){.fade{animation:none;}}
+</style>
+</head>
+<body>
+
+<div id="offline-bar" class="offline-bar">⚠ You're offline — Complai still works fully</div>
+<div id="install-bar" class="install-bar">
+  <div class="install-txt">Add <strong>Complai</strong> to your home screen for quick access</div>
+  <button class="install-btn" id="install-btn">Install</button>
+  <button class="install-close" id="install-close">✕</button>
+</div>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<script>
+// ══ PWA: Service Worker via Blob ═══════════════════════════════════════════
+(function() {
+  if (!('serviceWorker' in navigator)) return;
+
+  const SW_CODE = `
+const CACHE = 'complai-v1';
+const ASSETS = [self.location.href];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const fetched = fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => cached);
+      return cached || fetched;
+    })
+  );
+});
+  `;
+
+  const blob = new Blob([SW_CODE], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swUrl).then(reg => {
+    console.log('[Complai] SW registered');
+  }).catch(err => {
+    console.log('[Complai] SW error:', err);
+  });
+})();
+
+// ══ PWA: Offline detection ══════════════════════════════════════════════════
+const offlineBar = document.getElementById('offline-bar');
+function updateOnline() {
+  offlineBar.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ══ PWA: Install prompt ══════════════════════════════════════════════════════
+let deferredPrompt = null;
+const installBar = document.getElementById('install-bar');
+const installBtn = document.getElementById('install-btn');
+const installClose = document.getElementById('install-close');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBar.classList.add('show');
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBar.classList.remove('show');
+});
+
+installClose.addEventListener('click', () => {
+  installBar.classList.remove('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  installBar.classList.remove('show');
+});
+</script>
+
+<script>
+// ══ App ═════════════════════════════════════════════════════════════════════
+const { useState, useCallback, useRef } = React;
+const h = React.createElement;
+
+// ── Constants ─────────────────────────────────────────────────────────────
+const SUPPORT_TYPES  = ["Community Access","Daily Living","Personal Care","Social Skills","Supported Employment","Therapy Support","Transport","Overnight Support","Group Activities"];
+const INCIDENT_TYPES = ["Behavioural Incident","Fall / Physical Injury","Property Damage","Medication Error","Medical Emergency","Safeguarding Concern","Environmental Hazard","Other"];
+const SEVERITY       = ["Low — Minor, no injury or harm","Medium — Required intervention or monitoring","High — Injury, significant harm, or reportable to NDIS Commission"];
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+const tc  = s => s ? s[0].toUpperCase()+s.slice(1) : "";
+const now = () => new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
+const fmt = d => { if(!d) return "—"; try{return new Date(d).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"});}catch{return d;} };
+
+// ── Spell dictionary ──────────────────────────────────────────────────────
+const DICT = {"paticipant":"participant","particpant":"participant","participent":"participant","participnat":"participant","nids":"NDIS","nsid":"NDIS","behaviou":"behaviour","behavoir":"behaviour","behavour":"behaviour","behviour":"behaviour","comunity":"community","commuity":"community","communty":"community","communtiy":"community","independance":"independence","independece":"independence","independnce":"independence","independant":"independent","independnet":"independent","safegaurding":"safeguarding","safeguardig":"safeguarding","safgeuarding":"safeguarding","wellbing":"wellbeing","welbing":"wellbeing","dissability":"disability","disabilty":"disability","disabiliy":"disability","disablity":"disability","disbility":"disability","therepist":"therapist","therapiest":"therapist","ocupational":"occupational","occuaptional":"occupational","phsyiotherapy":"physiotherapy","physiotherpay":"physiotherapy","physiotherpy":"physiotherapy","psycologist":"psychologist","psychologst":"psychologist","phsychologist":"psychologist","comunication":"communication","communicaiton":"communication","communicaton":"communication","medicaton":"medication","medicaiton":"medication","medicaion":"medication","perscription":"prescription","precription":"prescription","prescripton":"prescription","actvity":"activity","activty":"activity","activiy":"activity","acitivity":"activity","activites":"activities","activiites":"activities","activiteis":"activities","excercise":"exercise","exercice":"exercise","excersize":"exercise","exercse":"exercise","hygene":"hygiene","hygeine":"hygiene","hygeiene":"hygiene","preperation":"preparation","perparation":"preparation","assitance":"assistance","assisstance":"assistance","assistnce":"assistance","assisance":"assistance","asistance":"assistance","encoraged":"encouraged","encourged":"encouraged","achived":"achieved","acheived":"achieved","acheeved":"achieved","achievd":"achieved","demonstarted":"demonstrated","demostrated":"demonstrated","demonstated":"demonstrated","paticipated":"participated","partipated":"participated","participted":"participated","engaed":"engaged","engaeged":"engaged","enaged":"engaged","supervison":"supervision","supervisoin":"supervision","supervsion":"supervision","promting":"prompting","prompiting":"prompting","promptng":"prompting","agression":"aggression","agresion":"aggression","agrression":"aggression","agressive":"aggressive","agrresive":"aggressive","agresive":"aggressive","anxeity":"anxiety","anixety":"anxiety","anxity":"anxiety","depresion":"depression","depresson":"depression","depressoin":"depression","emtional":"emotional","emotonal":"emotional","emoitonal":"emotional","setled":"settled","setteld":"settled","safty":"safety","safet":"safety","incedent":"incident","incidnet":"incident","incidient":"incident","incdent":"incident","documention":"documentation","documentaiton":"documentation","documenation":"documentation","recieved":"received","recived":"received","acheivements":"achievements","achivements":"achievements","achievemnts":"achievements","progres":"progress","progess":"progress","gaols":"goals","stratagies":"strategies","stratgies":"strategies","strategeis":"strategies","enviornment":"environment","environemnt":"environment","environmet":"environment","shoping":"shopping","shpping":"shopping","shoppping":"shopping","trasport":"transport","tranport":"transport","transprot":"transport","libary":"library","libarry":"library","librray":"library","resturant":"restaurant","restarant":"restaurant","restaurent":"restaurant","outised":"outside","outsdie":"outside","independantly":"independently","independenly":"independently","succesfully":"successfully","successfuly":"successfully","successully":"successfully","employmnet":"employment","employement":"employment","emplyoment":"employment","mobilty":"mobility","mobiliy":"mobility","moblity":"mobility","specailist":"specialist","specialst":"specialist","specalist":"specialist","referal":"referral","referrl":"referral","managment":"management","mangement":"management","managemnt":"management","orginisation":"organisation","oranisation":"organisation","cancled":"cancelled","canceld":"cancelled","cancelld":"cancelled","liason":"liaison","liasion":"liaison","liaision":"liaison","gaurdian":"guardian","guadian":"guardian","gaurdain":"guardian","famliy":"family","famiy":"family","famly":"family","vehical":"vehicle","vehicel":"vehicle","vehcle":"vehicle","emergancy":"emergency","emergnecy":"emergency","emrgency":"emergency","acident":"accident","accdent":"accident","accidnet":"accident","injurey":"injury","injry":"injury","injuri":"injury","apropiate":"appropriate","approriate":"appropriate","approiate":"appropriate","profesional":"professional","proffesional":"professional","professionl":"professional","comision":"commission","commision":"commission","commissoin":"commission","practicioner":"practitioner","practioner":"practitioner","regestered":"registered","registerd":"registered","certiified":"certified","certifed":"certified","certifid":"certified"};
+
+function spellCorrect(text) {
+  if(!text||!text.trim()) return {corrected:text,changes:[]};
+  const changes=[]; let result=text;
+  Object.entries(DICT).forEach(([w,r])=>{
+    try{
+      const rx=new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\b`,"gi");
+      if(rx.test(result)) result=result.replace(rx,m=>{
+        const fix=m[0]===m[0].toUpperCase()&&m[0]!==m[0].toLowerCase()?r[0].toUpperCase()+r.slice(1):r;
+        if(m.toLowerCase()!==fix.toLowerCase()) changes.push({from:m,to:fix});
+        return fix;
+      });
+    }catch(ex){}
+  });
+  const seen=new Set();
+  return {corrected:result,changes:changes.filter(c=>{const k=c.from.toLowerCase()+"→"+c.to.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;})};
+}
+
+// ── Generators ────────────────────────────────────────────────────────────
+// ── Variation helpers ─────────────────────────────────────────────────────
+// Deterministic "hash" so same participant always gets same variant, but
+// different participants get different sentence structures.
+function variantIdx(seed) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) { h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0; }
+  return Math.abs(h) % 4;
+}
+
+const SUMMARY_VARIANTS = [
+  (first,dur,type,d,mood,inc) => `${tc(first)} attended a ${dur}-hour ${type.toLowerCase()} session on ${d}. Throughout the shift, ${first} presented as ${mood}. The session concluded${inc?" with a noted incident (see separate report)":""} without significant concerns.`,
+  (first,dur,type,d,mood,inc) => `On ${d}, a ${dur}-hour ${type.toLowerCase()} session was completed with ${tc(first)}. ${tc(first)}'s presentation was ${mood} for the duration of the shift.${inc?" An incident occurred during this session — refer to the separate Incident Report.":""}`,
+  (first,dur,type,d,mood,inc) => `This ${dur}-hour ${type.toLowerCase()} session took place on ${d}. ${tc(first)} was ${mood} and the shift progressed${inc?" with an incident requiring separate documentation":""} as planned.`,
+  (first,dur,type,d,mood,inc) => `${tc(first)} received ${type.toLowerCase()} support for ${dur} hours on ${d}. ${tc(first)} presented as ${mood} at the commencement and maintained this presentation throughout.${inc?" Note: an incident occurred — please refer to the Incident Report filed for this shift.":""}`,
+];
+
+const ENGAGEMENT_VARIANTS = [
+  (first,eng,anx,pos,outcome) => `${tc(first)} was ${eng} throughout the session. ${anx?`Initial signs of anxiety were observed; however, the support worker applied de-escalation strategies and ${first} settled well. `:""}${pos?`${tc(first)} showed clear motivation and actively participated in all planned activities. `:""}${outcome}`,
+  (first,eng,anx,pos,outcome) => `${tc(first)}'s level of engagement was ${eng}. ${anx?`Some anxiety was evident at the start of the shift; targeted support was provided and ${first} was able to regulate and re-engage. `:""}${pos?`A positive attitude toward the session's activities was observed, with ${first} willingly participating throughout. `:""}${outcome}`,
+  (first,eng,anx,pos,outcome) => `During this session, ${first} was ${eng}. ${anx?`Early anxiety was noted and addressed using established de-escalation strategies, resulting in ${first} settling and engaging effectively. `:""}${pos?`${tc(first)} demonstrated enthusiasm and a willingness to engage with all scheduled activities. `:""}${outcome}`,
+  (first,eng,anx,pos,outcome) => `${tc(first)} participated in a ${eng} manner for the duration of the shift. ${anx?`Support worker responded promptly to early signs of distress; ${first} was able to settle and complete the session. `:""}${pos?`${tc(first)}'s positive disposition was evident, with active engagement in all planned support activities. `:""}${outcome}`,
+];
+
+const GOAL_VARIANTS = [
+  (first,agoal,pos) => `This session contributed to ${first}'s NDIS plan goals, particularly increased independence in ${agoal}. ${tc(first)} demonstrated ${pos?"continued progress toward identified goals, with observable improvement in targeted areas":"meaningful engagement with goal-directed activities"} during this session.`,
+  (first,agoal,pos) => `The support delivered during this session directly aligned with ${first}'s NDIS plan goals, specifically in the area of ${agoal}. ${pos?`Goal progress was evident, with ${first} demonstrating increased capacity and confidence.`:`${tc(first)} engaged with goal-directed activities as outlined in their current support plan.`}`,
+  (first,agoal,pos) => `Progress toward ${first}'s identified NDIS goals was supported during this session, with a focus on ${agoal}. ${pos?`${tc(first)} showed measurable progress and sustained effort toward achieving plan outcomes.`:`Participation in goal-aligned activities was supported and documented for review purposes.`}`,
+  (first,agoal,pos) => `Activities during this session were designed to support ${first}'s NDIS goals, including the development of greater independence in ${agoal}. ${pos?`${tc(first)} demonstrated positive progress and an ability to apply newly developed skills independently.`:`${tc(first)} engaged with activities that directly support achievement of their current plan goals.`}`,
+];
+
+const OBSERVATION_VARIANTS = [
+  (first,anx,inc) => `No${inc?"":" significant"} incidents or safeguarding concerns were identified during this session. ${anx?"Anxiety management strategies were applied effectively and ${first} was supported to self-regulate. ":""}${first}'s presentation was consistent with their established baseline. Any required follow-up actions will be recorded in the client management system.`,
+  (first,anx,inc) => `${inc?"An incident occurred during this session and has been documented in a separate Incident Report.":"No reportable incidents or safeguarding concerns arose during this shift."} ${anx?`Support was provided to address anxiety-related behaviours and ${first} responded positively to strategies implemented. `:""}${tc(first)}'s wellbeing was monitored throughout and no further concerns were identified at the conclusion of the shift.`,
+  (first,anx,inc) => `From a safeguarding perspective, ${inc?"an incident occurred and is documented separately.":"this session presented no concerns."} ${anx?`The support worker responded to signs of anxiety using planned behaviour support strategies. ${tc(first)} was able to settle and the session continued without further escalation. `:""}${tc(first)}'s overall presentation remained within normal parameters.`,
+  (first,anx,inc) => `Worker observations: ${inc?"an incident occurred during this shift — refer to the separate Incident Report for full details.":"no incidents, hazards, or safeguarding concerns were identified."} ${anx?`Anxious behaviours were noted and responded to in accordance with ${first}'s behaviour support plan. `:""}${tc(first)} appeared safe and comfortable at the conclusion of the session.`,
+];
+
+const OUTCOME_VARIANTS = [
+  (first,pos) => pos?`${tc(first)} expressed satisfaction at the conclusion of the shift, demonstrating a sense of accomplishment.`:`${tc(first)} was supported to complete the session's planned activities within the allocated timeframe.`,
+  (first,pos) => pos?`The session concluded positively, with ${first} expressing contentment and a sense of achievement.`:`${tc(first)} was supported throughout the session and all planned activities were addressed as scheduled.`,
+  (first,pos) => pos?`${tc(first)} was visibly pleased at the session's conclusion, reflecting the positive outcomes achieved during the shift.`:`${tc(first)} completed the session with support, and all planned objectives were addressed appropriately.`,
+  (first,pos) => pos?`A positive conclusion to the session was noted, with ${first} demonstrating increased confidence and a positive affect.`:`The session was completed as planned. ${tc(first)} was appropriately supported throughout and no concerns were identified at conclusion.`,
+];
+
+function genNote({participant,ndisNumber,worker,date,shiftType,duration,rawNotes}){
+  const {corrected:clean,changes:sc}=spellCorrect(rawNotes);
+  const name=participant||"the participant",first=name.split(" ")[0],d=fmt(date),lo=clean.toLowerCase();
+  const pos=/happy|good|well|great|enjoy|smile|positive|calm|pleased|proud/.test(lo);
+  const anx=/anxious|nervous|worried|upset|distress|agitat/.test(lo);
+  const inc=/incident|fall|hurt|injur|aggress|crisis/.test(lo);
+  const mood=pos&&!anx?"positive and engaged":anx?"initially anxious but settled as the session progressed":"generally cooperative throughout the session";
+  const eng=pos?"actively engaged and responsive":"present and participated with support";
+  const agoal=shiftType==="Community Access"?"community participation and social inclusion":shiftType==="Daily Living"?"daily living skills and household management":shiftType==="Personal Care"?"personal care and hygiene routines":"functional skills and daily activities";
+  const sdesc=shiftType==="Personal Care"?"hands-on personal care assistance":shiftType==="Community Access"?"accompaniment and facilitation in the community":shiftType==="Daily Living"?"assistance with daily living tasks and household activities":"structured support";
+
+  // Pick variant set deterministically from participant name
+  const v=variantIdx(first+shiftType);
+  const outcome=OUTCOME_VARIANTS[v](first,pos);
+  const summary=SUMMARY_VARIANTS[v](first,duration,shiftType,d,mood,inc);
+  const engagement=ENGAGEMENT_VARIANTS[v](first,eng,anx,pos,outcome);
+  const goalPara=GOAL_VARIANTS[v](first,agoal,pos);
+  const observation=OBSERVATION_VARIANTS[v](first,anx,inc);
+
+  const note=`NDIS PROGRESS NOTE\n══════════════════════════════════════════════\nParticipant:     ${participant||"—"}${ndisNumber?`  (NDIS: ${ndisNumber})`:""}\nSupport Worker:  ${worker||"—"}\nDate:            ${d}\nSupport Type:    ${shiftType}\nDuration:        ${duration} hour(s)\n══════════════════════════════════════════════\n\nSUMMARY\n──────────────────────────────────────────────\n${summary}\n\nACTIVITIES & SUPPORT PROVIDED\n──────────────────────────────────────────────\nThe following support was provided during this session:\n\n${clean.trim().split(/[.!?]+/).filter(s=>s.trim().length>4).map(s=>`• ${tc(s.trim())}.`).join("\n")}\n\nThe support worker provided ${sdesc} in accordance with ${first}'s current NDIS support plan.\n\nPARTICIPANT ENGAGEMENT & RESPONSE\n──────────────────────────────────────────────\n${engagement}\n\nGOAL PROGRESS\n──────────────────────────────────────────────\n${goalPara}\n\nWORKER OBSERVATIONS\n──────────────────────────────────────────────\n${observation}\n──────────────────────────────────────────────\nRecorded by:   ${worker||"Support Worker"}\nDate recorded: ${now()}\nStatus:        COMPLETE — Pending supervisor review\n══════════════════════════════════════════════`;
+  return {note,spellChanges:sc};
+}
+
+function genIncident({participant,worker,date,time,location,incidentType,severity,description,actionsTaken,witnesses,injuries,followUp}){
+  const name=participant||"the participant",first=name.split(" ")[0],sev=severity||SEVERITY[0],isH=sev.startsWith("High"),isR=/high|injury|significant|safeguard|medical emergency/i.test(sev+incidentType);
+  return `NDIS INCIDENT REPORT\n══════════════════════════════════════════════\n${isH?"⚠  HIGH SEVERITY — REVIEW REQUIRED IMMEDIATELY\n══════════════════════════════════════════════\n":""}\nINCIDENT DETAILS\n──────────────────────────────────────────────\nParticipant:      ${participant||"—"}\nSupport Worker:   ${worker||"—"}\nDate:             ${fmt(date)}\nTime:             ${time||"Not recorded"}\nLocation:         ${location||"Not specified"}\nIncident Type:    ${incidentType}\nSeverity:         ${sev}\n\nREGULATORY STATUS\n──────────────────────────────────────────────\n${isR?"⚠ REPORTABLE INCIDENT — Notify the NDIS Commission via myNDIS Provider portal within 24 hours (if immediate risk) or 5 business days.":"✓ NON-REPORTABLE — Record in your internal incident management system."}\n\nDESCRIPTION OF INCIDENT\n──────────────────────────────────────────────\n${description.trim().split(/[.!?]+/).filter(s=>s.trim().length>4).map(s=>`${tc(s.trim())}.`).join(" ")}\n\nIMMEDIATE ACTIONS TAKEN\n──────────────────────────────────────────────\n${actionsTaken?actionsTaken.trim().split(/[.!?]+/).filter(s=>s.trim().length>4).map(s=>`• ${tc(s.trim())}.`).join("\n"):"• Responded to situation immediately.\n• Participant monitored for wellbeing.\n• Incident documented in client management system."}\n\nINJURIES / HARM\n──────────────────────────────────────────────\n${injuries||"No physical injuries reported."}\n\nFOLLOW-UP ACTIONS\n──────────────────────────────────────────────\n${followUp?followUp.trim().split(/[.!?]+/).filter(s=>s.trim().length>4).map((s,i)=>`${i+1}. ${tc(s.trim())}.`).join("\n"):"1. Review with Team Leader within 24 hours.\n2. Support plan reviewed for risk mitigation.\n3. Follow-up welfare check at next session.\n4. Incident register updated."}\n\n──────────────────────────────────────────────\nCompleted by:    ${worker||"Support Worker"}\nDate:            ${now()}\nSupervisor:      ${isH?"YES — Required immediately":"Pending"}\nStatus:          ${isH?"URGENT — Escalate to management":"COMPLETE — Pending supervisor review"}\n══════════════════════════════════════════════`;
+}
+
+function genPlan({name,age,disability,goals,strengths,challenges,supports}){
+  const flds={goals,strengths,challenges,supports};let allC=[];const clean={};
+  Object.entries(flds).forEach(([k,v])=>{if(v){const {corrected,changes}=spellCorrect(v);clean[k]=corrected;allC=allC.concat(changes);}else clean[k]=v;});
+  const seen=new Set();
+  const spellChanges=allC.filter(c=>{const k=c.from.toLowerCase()+"→"+c.to.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+  const first=(name||"the participant").split(" ")[0];
+  const note=`NDIS PARTICIPANT SUPPORT PLAN\n══════════════════════════════════════════════\nParticipant:  ${name||"—"}${age?" | Age: "+age:""}\nDiagnosis:    ${disability||"—"}\nPlan Date:    ${now()}\nReview Date:  ${new Date(Date.now()+365*24*60*60*1000).toLocaleDateString("en-AU")}\n══════════════════════════════════════════════\n\n1. PARTICIPANT OVERVIEW\n──────────────────────────────────────────────\n${tc(first)} is a${age?" "+age+"-year-old":""} person living with ${disability}. This support plan was developed in partnership with ${first} to reflect their individual needs, goals, and aspirations. The plan is person-centred and strengths-based, aligned with ${first}'s NDIS funding and the NDIS Practice Standards.\n\n2. STRENGTHS & ABILITIES\n──────────────────────────────────────────────\n${(clean.strengths||"Motivated to achieve personal goals, engages positively with support workers, demonstrates resilience and adaptability").split(",").map(s=>`• ${tc(s.trim())}.`).join("\n")}\n\n3. SUPPORT NEEDS & CHALLENGES\n──────────────────────────────────────────────\n${(clean.challenges||"Daily living tasks, community access, communication and social participation").split(",").map(s=>`• ${tc(s.trim())}.`).join("\n")}\n\n4. NDIS GOALS (SMART)\n──────────────────────────────────────────────\nGoal 1 — Daily Living Independence\n${first} will increase independence in daily living tasks with decreasing support over 12 months.\n\nGoal 2 — Community Participation\n${first} will participate in at least two community activities per fortnight.\n\nGoal 3 — ${clean.goals?tc(clean.goals.split(/[.,]/)[0].trim()):"Skill Development"}\n${first} will ${clean.goals?clean.goals.split(/[.,]/)[0].trim().toLowerCase():"develop functional skills to support greater independence"}.\n\n5. SUPPORT STRATEGIES\n──────────────────────────────────────────────\n• Provide verbal prompting and physical guidance as needed\n• Use visual schedules and step-by-step instructions\n• Encourage and celebrate achievements to build confidence\n• Facilitate community access using positive behaviour support strategies\n• Collaborate with allied health to implement therapy recommendations\n\n6. CURRENT SUPPORTS\n──────────────────────────────────────────────\n${clean.supports||"Support worker assistance, family/carer support, allied health services."}\n\n7. REVIEW SCHEDULE\n──────────────────────────────────────────────\n• Monthly:    Progress note review with Team Leader\n• Quarterly:  Goal progress review with participant and coordinator\n• Annually:   Full plan review with participant, family and NDIS planner\n\n──────────────────────────────────────────────\nPrepared by: Support Coordinator\nDate:        ${now()}\nStatus:      DRAFT — Pending participant and guardian sign-off\n══════════════════════════════════════════════`;
+  return {note,spellChanges};
+}
+
+function checkCompliance(noteText,fd){
+  const t=noteText.toLowerCase(),f=fd||{};
+  const CC={"Identification":"c-id","Content Quality":"c-cq","Safety & Compliance":"c-sc","Language":"c-lg"};
+  const checks=[
+    {label:"Person-First Language",   cat:"Language",           pass:!/(the disabled|suffers from|is suffering|afflicted|wheelchair.bound|confined to|mentally retarded|handicapped)/.test(t)&&(t.includes("participant")||t.includes("person")||t.includes("individual")),note:"Respectful person-first language used.",tip:"Replace 'suffers from' with 'lives with'. Avoid 'the disabled'."},
+    {label:"NDIS Number Recorded",    cat:"Identification",     pass:!!(f.ndisNumber&&f.ndisNumber.replace(/\s/g,"").length>=9),note:"9-digit NDIS number recorded.",tip:"Enter the 9-digit NDIS number — required for payment claim verification."},
+    {label:"Duration Recorded",       cat:"Identification",     pass:!!(f.duration&&parseFloat(f.duration)>0)&&/\d+(\.\d+)?\s*(hour|hr|min)/.test(t),note:"Session duration appears in the note.",tip:"Duration must appear in the note body — e.g. '2-hour session'."},
+    {label:"Support Type Referenced", cat:"Identification",     pass:!!(f.shiftType&&t.includes(f.shiftType.toLowerCase().split(" ")[0])),note:"Support type matches NDIS line item.",tip:"State the support type in the note — e.g. 'community access'."},
+    {label:"Specific Activities",     cat:"Content Quality",    pass:t.length>300&&(t.split("•").length>2||t.split("\n").filter(l=>l.trim().length>10).length>4),note:"Specific activities described.",tip:"Describe exactly what happened. Vague notes fail audit."},
+    {label:"Named Goal Referenced",   cat:"Content Quality",    pass:/goal \d|goal one|goal two|goal three|ndis goal|plan goal|independence goal|community goal|daily living goal/.test(t)||/(contributed to|aligned with|progress toward|working toward|supports.*goal)/.test(t),note:"Links session to a specific named NDIS goal.",tip:"Name the goal — e.g. 'contributed to Goal 1: independence in daily living'."},
+    {label:"Participant Response",    cat:"Content Quality",    pass:/(participant|he |she |they )\s*(was|presented|appeared|demonstrated|responded|engaged|expressed|showed)/.test(t)||/presented as|demonstrated|expressed (satisfaction|enjoyment|frustration|anxiety)|was (engaged|cooperative|motivated|anxious|calm|settled)/.test(t),note:"Documents how participant presented.",tip:"Include mood — e.g. 'John presented as calm and motivated'."},
+    {label:"Incident Status",         cat:"Safety & Compliance",pass:/no (significant |major |reportable )?(incident|safeguarding|concern|injury|harm)|no concerns (were|identified)/.test(t)||/incident|safeguard|injury|harm|risk/.test(t),note:"Incident status explicitly stated.",tip:"Add: 'No incidents or safeguarding concerns were identified during this session.'"},
+    {label:"Strengths-Based",         cat:"Language",           pass:/(demonstrated|showed|achieved|was able to|successfully|independently|with (minimal|reduced|decreasing) support|built confidence|made progress|accomplished)/.test(t),note:"Highlights participant capabilities.",tip:"Use capability language — 'John successfully completed' not 'John needed assistance'."},
+    {label:"Professional Language",   cat:"Language",           pass:!/(he's|she's|they're|gonna|wanna|kinda|sorta|a bit|heaps|really good|super|awesome|totally|basically|tbh|lol|ok |fine\.|stuff)/.test(t),note:"Formal professional tone maintained.",tip:"Remove informal language — progress notes are legal documents."},
+    {label:"No Vague Phrases",        cat:"Language",           pass:!/(seemed fine|was ok|did (some )?stuff|had a good (time|day|session)|went (well|ok|okay|alright)|nothing (to report|special|unusual)|as (usual|normal|per normal)|same as (always|last time|usual))/.test(t),note:"No vague or non-specific phrases.",tip:"'Had a good session' means nothing to auditors. Be specific."},
+    {label:"Worker Identified",       cat:"Identification",     pass:!!(f.worker&&f.worker.trim().length>1)&&(t.includes("recorded by")||t.includes("support worker")||t.includes(f.worker.toLowerCase())),note:"Support worker identified in the note.",tip:"Ensure the worker's name appears in the sign-off section."},
+  ];
+  checks.forEach(c=>c.catCls=CC[c.cat]||"c-lg");
+  const passed=checks.filter(c=>c.pass).length,score=Math.round((passed/checks.length)*100);
+  return {score,status:score>=80?"Compliant":score>=58?"Needs Review":"Non-Compliant",checks};
+}
+
+function exportPDF(content,title){
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a2e}.page{max-width:750px;margin:0 auto;padding:40px 48px}.header{border-bottom:3px solid #0891B2;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:22pt;font-weight:800;color:#0891B2}.logo span{color:#00D4FF}.meta{font-size:9pt;color:#64748B;text-align:right;letter-spacing:0.08em;text-transform:uppercase;line-height:1.6}.body{font-size:10pt;line-height:1.85;white-space:pre-wrap;font-family:'Courier New',monospace;color:#1e293b}.footer{border-top:1px solid #e2e8f0;margin-top:32px;padding-top:14px;display:flex;justify-content:space-between;font-size:8pt;color:#94A3B8}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><div class="page"><div class="header"><div class="logo">Com<span>plai</span></div><div class="meta">NDIS AI Documentation<br>Generated: ${now()}<br>Review before submission</div></div><div class="body">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div><div class="footer"><span>Complai · complai.com.au</span><span style="color:#10B981;font-weight:600">✓ ${now()}</span></div></div></body></html>`;
+  const w=window.open(URL.createObjectURL(new Blob([html],{type:"text/html"})),"_blank");
+  if(w) w.onload=()=>setTimeout(()=>w.print(),400);
+}
+
+// ── History (localStorage) ────────────────────────────────────────────────
+const HISTORY_KEY = "complai_history_v1";
+const MAX_HISTORY = 10;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveToHistory(entry) {
+  try {
+    const existing = loadHistory();
+    const updated  = [entry, ...existing].slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch(e) {}
+}
+
+function deleteFromHistory(id) {
+  try {
+    const updated = loadHistory().filter(e => e.id !== id);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch(e) {}
+}
+
+// ── Demo scenarios ────────────────────────────────────────────────────────
+const DEMOS = [
+  {
+    label: "Community Access — Positive",
+    form: {
+      participant:"Priya Sharma", ndisNumber:"430 192 847",
+      worker:"Sarah Mitchell",
+      date: new Date().toISOString().slice(0,10),
+      shiftType:"Community Access", duration:"3",
+      rawNotes:"Took Priya to Westfield for grocery shopping. She was inicially nervous in the carpark but calmed down quickly. Helped her navigate the supermarket and choose items from her list. Priya independantly counted her change at the checkout — a big milestone. She was really happy and proud of herself. No incedents.",
+    }
+  },
+  {
+    label: "Daily Living — Anxious Start",
+    form: {
+      participant:"Wei Chen", ndisNumber:"430 884 221",
+      worker:"James Okafor",
+      date: new Date().toISOString().slice(0,10),
+      shiftType:"Daily Living", duration:"2",
+      rawNotes:"Wei was anxious when I arrived. Helped him with meal preperation — scrambled eggs and toast. He needed promting for hygene routine but completed it with minimal assitance. By the end of the session Wei had setteld and was smiling. Cooked a good meal and cleaned up afterwords. No incidents.",
+    }
+  },
+  {
+    label: "Personal Care — Routine Session",
+    form: {
+      participant:"Marco Rossi", ndisNumber:"430 337 512",
+      worker:"Lisa Nguyen",
+      date: new Date().toISOString().slice(0,10),
+      shiftType:"Personal Care", duration:"1.5",
+      rawNotes:"Provided personal care assitance to Marco including showering and grooming. Marco was cooperative and engaged throughout. Completed morning routene without any issues. Marco was in a positive mood and chatted about his weekend plans. No safgeuarding concerns identified.",
+    }
+  },
+];
+
+// ── Additional CSS for history + demo ─────────────────────────────────────
+const EXTRA_CSS = `
+.demo-bar{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.demo-bar::-webkit-scrollbar{display:none;}
+.demo-chip{flex-shrink:0;padding:8px 13px;background:var(--surf);border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--soft);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s;}
+.demo-chip:hover,.demo-chip:active{border-color:var(--accent);color:var(--accent);background:#00D4FF0a;}
+.demo-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+
+.hist-empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.hist-icon{font-size:40px;opacity:.18;margin-bottom:10px;}
+.hist-empty-txt{font-size:13px;}
+.hist-item{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--bdr);cursor:pointer;gap:10px;transition:background .12s;}
+.hist-item:last-child{border-bottom:none;}
+.hist-item:hover{background:rgba(255,255,255,.03);}
+.hist-item:active{background:rgba(255,255,255,.06);}
+.hist-type{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-bottom:5px;}
+.hist-note{background:#00D4FF18;color:#00D4FF;}
+.hist-incident{background:#EF444418;color:#EF4444;}
+.hist-plan{background:#10B98118;color:#10B981;}
+.hist-name{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.hist-meta{font-size:11px;color:var(--muted);}
+.hist-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;flex-shrink:0;line-height:1;}
+.hist-del:hover{color:var(--red);background:#EF444415;}
+`;
+
+// Inject extra CSS
+(function(){const s=document.createElement("style");s.textContent=EXTRA_CSS;document.head.appendChild(s);})();
+
+// ── Shared UI components ──────────────────────────────────────────────────
+function SpellBanner({changes}){
+  if(!changes||!changes.length) return null;
+  return h("div",{className:"spell-banner"},
+    h("div",{style:{fontSize:16,flexShrink:0}},"✏️"),
+    h("div",{style:{flex:1}},
+      h("div",{className:"spell-title"},`${changes.length} spelling correction${changes.length>1?"s":""} applied`),
+      h("div",{className:"spell-chips"},
+        changes.map((c,i)=>h("span",{key:i,className:"spell-chip"},
+          h("span",{className:"s-old"},c.from),h("span",{className:"s-arr"},"→"),h("span",null,c.to)
+        ))
+      )
+    )
+  );
+}
+
+function ScoreRing({score}){
+  const col=score>=80?"#10B981":score>=58?"#F59E0B":"#EF4444";
+  return h("svg",{width:56,height:56,viewBox:"0 0 56 56"},
+    h("circle",{cx:28,cy:28,r:22,fill:"none",stroke:"#1E2D45",strokeWidth:5}),
+    h("circle",{cx:28,cy:28,r:22,fill:"none",stroke:col,strokeWidth:5,strokeDasharray:`${score/100*138} 138`,strokeLinecap:"round",transform:"rotate(-90 28 28)"}),
+    h("text",{x:28,y:33,textAnchor:"middle",fontSize:14,fontWeight:700,fill:col,fontFamily:"inherit"},score),
+  );
+}
+
+function CompliancePanel({compliance}){
+  const [show,setShow]=useState(false);
+  const sc=compliance.score;
+  const col=sc>=80?"#10B981":sc>=58?"#F59E0B":"#EF4444";
+  return h("div",null,
+    h("div",{className:"score-block"},
+      h(ScoreRing,{score:sc}),
+      h("div",null,
+        h("div",{className:"score-title"},compliance.status),
+        h("div",{className:"score-sub"},`${compliance.checks.filter(c=>c.pass).length} of 12 criteria passed`),
+      ),
+    ),
+    h("div",{className:"check-pills"},
+      compliance.checks.map((c,i)=>h("span",{key:i,className:`cpill ${c.pass?"cp-pass":"cp-fail"}`},`${c.pass?"✓":"✗"} ${c.label}`))
+    ),
+    h("button",{className:"expand-btn",onClick:()=>setShow(p=>!p)},show?"Hide detail ▲":"View detail ▼"),
+    show&&h("div",{className:"check-rows fade"},
+      compliance.checks.map((c,i)=>h("div",{key:i,className:"check-row"},
+        h("div",{className:"c-icon",style:{color:c.pass?"#10B981":"#EF4444"}},c.pass?"✓":"✗"),
+        h("div",{style:{flex:1}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}},
+            h("div",{className:"c-lbl"},c.label),
+            h("span",{className:`cat-b ${c.catCls}`},c.cat),
+          ),
+          h("div",{className:"c-note"},c.note),
+          !c.pass&&c.tip&&h("div",{className:"c-tip"},`💡 ${c.tip}`),
+        ),
+        h("div",{style:{fontSize:10,fontWeight:700,color:c.pass?"#10B981":"#EF4444",flexShrink:0,marginTop:2}},c.pass?"Pass":"Fail"),
+      )),
+      h("div",{className:"check-footer",style:{background:sc>=80?"#10B98112":"#F59E0B12",border:`1px solid ${col}33`,color:col}},
+        sc>=80?"✓ Note meets NDIS Practice Standards. Safe to submit.":
+          `⚠ ${compliance.checks.filter(c=>!c.pass).length} criteria failed — review tips before submitting.`
+      ),
+    ),
+  );
+}
+
+function ResultView({title,out,spellChanges,compliance,onBack}){
+  return h("div",{className:"page fade"},
+    h("button",{className:"btn-back",onClick:onBack},"← Back"),
+    h(SpellBanner,{changes:spellChanges}),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},title),
+      h("div",{className:"result-box"},out),
+      h("div",{className:"btn-row"},
+        h("button",{className:"btn-ghost",onClick:()=>navigator.clipboard&&navigator.clipboard.writeText(out)},"📋 Copy"),
+        h("button",{className:"btn-ghost",style:{color:"#00D4FF",borderColor:"#00D4FF44"},onClick:()=>exportPDF(out,title)},"🖨 PDF"),
+      ),
+    ),
+    compliance&&h("div",{className:"card"},
+      h("div",{className:"card-title"},"Compliance Check"),
+      h(CompliancePanel,{compliance}),
+    ),
+  );
+}
+
+// ── Screens ───────────────────────────────────────────────────────────────
+function NoteScreen(){
+  const [view,setView]=useState("form");
+  const [result,setResult]=useState(null);
+  const [f,setF]=useState({participant:"",ndisNumber:"",worker:"",date:new Date().toISOString().slice(0,10),shiftType:"Community Access",duration:"2",rawNotes:""});
+  const set=k=>ev=>setF(p=>({...p,[k]:ev.target.value}));
+
+  function loadDemo(demo){ setF(demo.form); window.scrollTo({top:0,behavior:"smooth"}); }
+
+  function generate(){
+    const {note,spellChanges}=genNote(f);
+    const compliance=checkCompliance(note,f);
+    setResult({out:note,spellChanges,compliance});
+    // Save to history
+    saveToHistory({
+      id: Date.now().toString(),
+      type:"note",
+      participant:f.participant,
+      shiftType:f.shiftType,
+      date:f.date,
+      worker:f.worker,
+      score:compliance.score,
+      out:note,
+      spellChanges,
+    });
+    setView("result");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  if(view==="result") return h(ResultView,{title:"Progress Note",out:result.out,spellChanges:result.spellChanges,compliance:result.compliance,onBack:()=>{setView("form");window.scrollTo({top:0,behavior:"smooth"});}});
+
+  return h("div",{className:"page fade"},
+
+    // Demo scenarios
+    h("div",null,
+      h("div",{className:"demo-lbl"},"✦ Try a demo"),
+      h("div",{className:"demo-bar"},
+        DEMOS.map((d,i)=>h("button",{key:i,className:"demo-chip",onClick:()=>loadDemo(d)},d.label))
+      ),
+    ),
+
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Participant"),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Full name *"),h("input",{className:"inp",placeholder:"e.g. John Smith",value:f.participant,onChange:set("participant"),autoComplete:"name"})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"NDIS number *"),h("input",{className:"inp",placeholder:"e.g. 430 123 456",value:f.ndisNumber,onChange:set("ndisNumber"),maxLength:12,inputMode:"numeric"})),
+      h("div",{className:"field",style:{marginBottom:0}},h("label",{className:"lbl"},"Support worker name"),h("input",{className:"inp",placeholder:"e.g. Sarah",value:f.worker,onChange:set("worker"),autoComplete:"name"})),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Shift Details"),
+      h("div",{className:"row2"},
+        h("div",{className:"field"},h("label",{className:"lbl"},"Date"),h("input",{type:"date",className:"inp",value:f.date,onChange:set("date")})),
+        h("div",{className:"field"},h("label",{className:"lbl"},"Hours"),h("input",{type:"number",className:"inp",min:"0.5",max:"24",step:"0.5",value:f.duration,onChange:set("duration"),inputMode:"decimal"})),
+      ),
+      h("div",{className:"field",style:{marginBottom:0}},
+        h("label",{className:"lbl"},"Support type"),
+        h("select",{className:"inp",value:f.shiftType,onChange:set("shiftType")},SUPPORT_TYPES.map(t=>h("option",{key:t},t))),
+      ),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Your Notes"),
+      h("div",{className:"alert a-accent",style:{marginBottom:14}},
+        h("span",null,"✏️"),
+        h("span",null,"Write naturally — Complai handles formatting, spelling, and compliance scoring automatically."),
+      ),
+      h("div",{className:"field"},
+        h("label",{className:"lbl"},"Raw worker notes *"),
+        h("textarea",{className:"inp",style:{minHeight:"160px"},placeholder:"e.g. Took John to the shops. He was nervous at first but settled down. Helped him pick lunch and count change. Good session overall.",value:f.rawNotes,onChange:set("rawNotes"),autoCorrect:"on",autoCapitalize:"sentences",spellCheck:true}),
+      ),
+      h("button",{className:"btn btn-primary",disabled:!f.participant||!f.rawNotes,onClick:generate},"✦  Generate Note + Check Compliance"),
+    ),
+  );
+}
+
+function IncidentScreen(){
+  const [view,setView]=useState("form");
+  const [out,setOut]=useState("");
+  const [f,setF]=useState({participant:"",worker:"",date:new Date().toISOString().slice(0,10),time:"",location:"",incidentType:"Behavioural Incident",severity:SEVERITY[0],description:"",actionsTaken:"",witnesses:"",injuries:"",followUp:""});
+  const set=k=>ev=>setF(p=>({...p,[k]:ev.target.value}));
+  const isH=f.severity.startsWith("High");
+
+  function generate(){
+    const out=genIncident(f);
+    saveToHistory({
+      id:Date.now().toString(),
+      type:"incident",
+      participant:f.participant,
+      shiftType:f.incidentType,
+      date:f.date,
+      worker:f.worker,
+      score:null,
+      out,
+      spellChanges:[],
+    });
+    setOut(out);setView("result");window.scrollTo({top:0,behavior:"smooth"});
+  }
+  if(view==="result") return h(ResultView,{title:"Incident Report",out,spellChanges:[],compliance:null,onBack:()=>{setView("form");window.scrollTo({top:0,behavior:"smooth"});}});
+
+  return h("div",{className:"page fade"},
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Who & When"),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Participant *"),h("input",{className:"inp",placeholder:"Full name",value:f.participant,onChange:set("participant")})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Support worker"),h("input",{className:"inp",placeholder:"Your name",value:f.worker,onChange:set("worker")})),
+      h("div",{className:"row2"},
+        h("div",{className:"field"},h("label",{className:"lbl"},"Date"),h("input",{type:"date",className:"inp",value:f.date,onChange:set("date")})),
+        h("div",{className:"field"},h("label",{className:"lbl"},"Time"),h("input",{type:"time",className:"inp",value:f.time,onChange:set("time")})),
+      ),
+      h("div",{className:"field",style:{marginBottom:0}},h("label",{className:"lbl"},"Location"),h("input",{className:"inp",placeholder:"e.g. Participant's home",value:f.location,onChange:set("location")})),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Incident Type"),
+      h("div",{className:"field"},h("select",{className:"inp",value:f.incidentType,onChange:set("incidentType")},INCIDENT_TYPES.map(t=>h("option",{key:t},t)))),
+      h("div",{className:"field",style:{marginBottom:0}},
+        h("label",{className:"lbl"},"Severity"),
+        h("div",{className:"sev-opts"},SEVERITY.map((sv,i)=>h("div",{key:i,className:`sev-opt ${f.severity===sv?i===0?"sev-low":i===1?"sev-med":"sev-high":""}`,onClick:()=>setF(p=>({...p,severity:sv}))},sv))),
+        isH&&h("div",{className:"alert a-red",style:{marginTop:10}},h("span",null,"⚠"),h("span",null,"High severity — may be reportable to NDIS Commission within 24 hours")),
+      ),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"What Happened *"),
+      h("textarea",{className:"inp",style:{minHeight:"140px"},placeholder:"Describe what happened in your own words...",value:f.description,onChange:set("description"),autoCapitalize:"sentences",spellCheck:true}),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Actions & Follow-up"),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Immediate actions taken"),h("textarea",{className:"inp",style:{minHeight:"90px"},placeholder:"What did you do right away?",value:f.actionsTaken,onChange:set("actionsTaken")})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Injuries or harm"),h("input",{className:"inp",placeholder:"None / describe if any",value:f.injuries,onChange:set("injuries")})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Witnesses"),h("input",{className:"inp",placeholder:"Names or 'None'",value:f.witnesses,onChange:set("witnesses")})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Follow-up required"),h("textarea",{className:"inp",style:{minHeight:"80px"},placeholder:"What needs to happen next?",value:f.followUp,onChange:set("followUp")})),
+      h("button",{className:`btn ${isH?"btn-red":"btn-primary"}`,disabled:!f.participant||!f.description,onClick:generate},isH?"⚠  Generate Urgent Report":"✦  Generate Incident Report"),
+    ),
+  );
+}
+
+function CarePlanScreen(){
+  const [view,setView]=useState("form");
+  const [result,setResult]=useState(null);
+  const [f,setF]=useState({name:"",age:"",disability:"",goals:"",strengths:"",challenges:"",supports:""});
+  const set=k=>ev=>setF(p=>({...p,[k]:ev.target.value}));
+
+  function build(){const {note,spellChanges}=genPlan(f);setResult({out:note,spellChanges});setView("result");window.scrollTo({top:0,behavior:"smooth"});}
+  if(view==="result") return h(ResultView,{title:"Care Plan",out:result.out,spellChanges:result.spellChanges,compliance:null,onBack:()=>{setView("form");window.scrollTo({top:0,behavior:"smooth"});}});
+
+  return h("div",{className:"page fade"},
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Participant"),
+      h("div",{className:"row2"},
+        h("div",{className:"field"},h("label",{className:"lbl"},"Full name *"),h("input",{className:"inp",placeholder:"Name",value:f.name,onChange:set("name")})),
+        h("div",{className:"field"},h("label",{className:"lbl"},"Age"),h("input",{className:"inp",placeholder:"e.g. 34",value:f.age,onChange:set("age"),inputMode:"numeric"})),
+      ),
+      h("div",{className:"field",style:{marginBottom:0}},h("label",{className:"lbl"},"Disability / Diagnosis *"),h("input",{className:"inp",placeholder:"e.g. Autism Spectrum Disorder",value:f.disability,onChange:set("disability")})),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Goals & Strengths"),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Goals & aspirations"),h("textarea",{className:"inp",style:{minHeight:"110px"},placeholder:"What does the participant want to achieve?",value:f.goals,onChange:set("goals"),spellCheck:true,autoCapitalize:"sentences"})),
+      h("div",{className:"field",style:{marginBottom:0}},h("label",{className:"lbl"},"Strengths & interests"),h("textarea",{className:"inp",style:{minHeight:"90px"},placeholder:"e.g. Loves music, great memory, enjoys cooking...",value:f.strengths,onChange:set("strengths"),spellCheck:true})),
+    ),
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"Needs & Supports"),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Challenges & needs"),h("textarea",{className:"inp",style:{minHeight:"90px"},placeholder:"e.g. Needs prompting for hygiene, difficulty with social cues...",value:f.challenges,onChange:set("challenges"),spellCheck:true})),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Current supports"),h("input",{className:"inp",placeholder:"e.g. Support worker 3×/week, OT monthly",value:f.supports,onChange:set("supports")})),
+      h("button",{className:"btn btn-primary",disabled:!f.name||!f.disability,onClick:build},"✦  Build Care Plan"),
+    ),
+  );
+}
+
+function CheckScreen(){
+  const [text,setText]=useState(""),
+        [ndis,setNdis]=useState(""),
+        [worker,setWorker]=useState(""),
+        [shift,setShift]=useState("Community Access"),
+        [dur,setDur]=useState("2"),
+        [result,setResult]=useState(null);
+  function run(){setResult(checkCompliance(text,{ndisNumber:ndis,worker,shiftType:shift,duration:dur}));}
+  return h("div",{className:"page fade"},
+    h("div",{className:"card"},
+      h("div",{className:"card-title"},"12-Point Compliance Check"),
+      h("div",{className:"row2"},
+        h("div",{className:"field"},h("label",{className:"lbl"},"NDIS Number"),h("input",{className:"inp",placeholder:"430 123 456",value:ndis,onChange:ev=>setNdis(ev.target.value),maxLength:12,inputMode:"numeric"})),
+        h("div",{className:"field"},h("label",{className:"lbl"},"Support worker"),h("input",{className:"inp",placeholder:"Name",value:worker,onChange:ev=>setWorker(ev.target.value)})),
+      ),
+      h("div",{className:"row2"},
+        h("div",{className:"field"},h("label",{className:"lbl"},"Support type"),h("select",{className:"inp",value:shift,onChange:ev=>setShift(ev.target.value)},SUPPORT_TYPES.map(t=>h("option",{key:t},t)))),
+        h("div",{className:"field"},h("label",{className:"lbl"},"Duration (hrs)"),h("input",{type:"number",className:"inp",min:"0.5",max:"24",step:"0.5",value:dur,onChange:ev=>setDur(ev.target.value),inputMode:"decimal"})),
+      ),
+      h("div",{className:"field"},
+        h("label",{className:"lbl"},"Paste note to check"),
+        h("textarea",{className:"inp",style:{minHeight:"160px"},placeholder:"Paste any progress note here to run the 12-point NDIS audit compliance check...",value:text,onChange:ev=>setText(ev.target.value)}),
+      ),
+      h("button",{className:"btn btn-primary",disabled:text.length<20,onClick:run},"🔍  Run Compliance Check"),
+    ),
+    result&&h("div",{className:"card fade"},
+      h("div",{className:"card-title"},"Result"),
+      h(CompliancePanel,{compliance:result}),
+    ),
+  );
+}
+
+function HistoryScreen(){
+  const [entries, setEntries] = useState(loadHistory);
+  const [viewing, setViewing] = useState(null);
+
+  function del(id){
+    deleteFromHistory(id);
+    setEntries(loadHistory());
+  }
+
+  if(viewing) return h(ResultView,{
+    title: viewing.type==="note"?"Progress Note":viewing.type==="incident"?"Incident Report":"Care Plan",
+    out: viewing.out,
+    spellChanges: viewing.spellChanges||[],
+    compliance: viewing.type==="note"&&viewing.score!=null ? {score:viewing.score,status:viewing.score>=80?"Compliant":viewing.score>=58?"Needs Review":"Non-Compliant",checks:[]} : null,
+    onBack:()=>setViewing(null),
+  });
+
+  const typeLabel = {note:"📋 Note", incident:"⚠️ Incident", plan:"📄 Care Plan"};
+  const typeCls   = {note:"hist-note", incident:"hist-incident", plan:"hist-plan"};
+
+  return h("div",{className:"page fade"},
+    h("div",{className:"card"},
+      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:entries.length?14:0}},
+        h("div",{className:"card-title",style:{marginBottom:0}},"Recent documents"),
+        entries.length>0&&h("button",{
+          style:{background:"none",border:"none",fontSize:11,cursor:"pointer",color:"#64748B",fontFamily:"inherit"},
+          onClick:()=>{if(confirm("Clear all history?")) {localStorage.removeItem(HISTORY_KEY);setEntries([]);}}
+        },"Clear all"),
+      ),
+      entries.length===0
+        ? h("div",{className:"hist-empty"},
+            h("div",{className:"hist-icon"},"🗂️"),
+            h("div",{className:"hist-empty-txt"},"No documents yet"),
+            h("div",{style:{fontSize:11,color:"var(--muted)",marginTop:5}},"Generated notes will appear here"),
+          )
+        : h("div",null,
+            entries.map(e=>h("div",{key:e.id,className:"hist-item"},
+              h("div",{style:{flex:1},onClick:()=>setViewing(e)},
+                h("span",{className:`hist-type ${typeCls[e.type]||"hist-note"}`},typeLabel[e.type]||"📋 Note"),
+                h("div",{className:"hist-name"},e.participant||"Unknown participant"),
+                h("div",{className:"hist-meta"},
+                  `${e.shiftType||""} · ${e.date||""}${e.worker?" · "+e.worker:""}${e.score!=null?" · Score: "+e.score+"%":""}`
+                ),
+              ),
+              h("button",{className:"hist-del",onClick:ev=>{ev.stopPropagation();del(e.id);}},"\u00d7"),
+            )),
+          ),
+    ),
+    h("div",{className:"alert a-accent",style:{marginTop:4}},
+      h("span",null,"💾"),
+      h("span",null,"Documents are stored on this device only. They stay here until you clear them or uninstall the app."),
+    ),
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────
+const TABS=[{id:"notes",label:"Notes",icon:"📋"},{id:"incident",label:"Incidents",icon:"⚠️"},{id:"plan",label:"Care Plan",icon:"📄"},{id:"history",label:"History",icon:"🗂️"}];
+
+function App(){
+  const [tab,setTab]=useState("notes");
+  const switchTab=useCallback(t=>{setTab(t);window.scrollTo({top:0,behavior:"instant"});},[]);
+  return h(React.Fragment,null,
+    h("div",{className:"topbar"},
+      h("div",{className:"brand"},
+        h("div",{className:"brand-icon"},"C"),
+        h("div",null,h("div",{className:"brand-name"},"Complai"),h("div",{className:"brand-sub"},"NDIS Docs")),
+      ),
+      h("div",{className:"status"},h("div",{className:"dot"}),h("span",{className:"dot-lbl"},"Ready")),
+    ),
+    tab==="notes"    && h(NoteScreen),
+    tab==="incident" && h(IncidentScreen),
+    tab==="plan"     && h(CarePlanScreen),
+    tab==="history"  && h(HistoryScreen),
+    h("div",{className:"bottom-nav"},
+      TABS.map(t=>h("button",{key:t.id,className:`nav-btn${tab===t.id?" active":""}`,onClick:()=>switchTab(t.id)},
+        h("div",{className:"nav-icon"},t.icon),
+        h("div",{className:"nav-label"},t.label),
+      ))
+    ),
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+</script>
+</body>
+</html>
