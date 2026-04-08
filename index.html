@@ -92,6 +92,22 @@ body{
 .install-btn{padding:7px 14px;background:var(--accent);color:#000;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;}
 .install-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;}
 
+/* ══ iOS install banner ══════════════════════════════════════════════════ */
+.ios-bar{
+  display:none;
+  background:linear-gradient(135deg,#00D4FF12,#0891B220);
+  border-bottom:1px solid #00D4FF30;
+  padding:12px 16px;
+  align-items:flex-start;gap:12px;
+}
+.ios-bar.show{display:flex;}
+.ios-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ios-body{flex:1;}
+.ios-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+.ios-steps{font-size:12px;color:var(--soft);line-height:1.6;}
+.ios-steps span{color:var(--txt);font-weight:600;}
+.ios-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0;}
+
 /* ══ Page content ════════════════════════════════════════════════════════ */
 .page{padding:14px calc(16px + var(--sar)) 14px calc(16px + var(--sal));}
 
@@ -255,6 +271,16 @@ select.inp{
   <button class="install-btn" id="install-btn">Install</button>
   <button class="install-close" id="install-close">✕</button>
 </div>
+<div id="ios-bar" class="ios-bar">
+  <div class="ios-icon">📲</div>
+  <div class="ios-body">
+    <div class="ios-title">Install Complai on your iPhone</div>
+    <div class="ios-steps">
+      Tap <span>Share</span> <span style="font-size:14px;">⎋</span> at the bottom of Safari, then tap <span>"Add to Home Screen"</span>
+    </div>
+  </div>
+  <button class="ios-close" id="ios-close">✕</button>
+</div>
 <div id="root"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -346,6 +372,23 @@ installClose.addEventListener('click', () => {
 window.addEventListener('appinstalled', () => {
   installBar.classList.remove('show');
 });
+
+// ══ PWA: iOS install banner ══════════════════════════════════════════════
+(function() {
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandaloneMode = window.navigator.standalone === true;
+  const dismissed = sessionStorage.getItem('ios_bar_dismissed');
+  if (isIos && !isInStandaloneMode && !dismissed) {
+    const bar = document.getElementById('ios-bar');
+    const close = document.getElementById('ios-close');
+    // Small delay so page renders first
+    setTimeout(() => bar.classList.add('show'), 1200);
+    close.addEventListener('click', () => {
+      bar.classList.remove('show');
+      sessionStorage.setItem('ios_bar_dismissed', '1');
+    });
+  }
+})();
 </script>
 
 <script>
