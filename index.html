@@ -669,7 +669,7 @@ function checkCompliance(noteText,fd){
 }
 
 function exportPDF(content,title){
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a2e}.page{max-width:750px;margin:0 auto;padding:40px 48px}.header{border-bottom:3px solid #0891B2;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:22pt;font-weight:800;color:#0891B2}.logo span{color:#00D4FF}.meta{font-size:9pt;color:#64748B;text-align:right;letter-spacing:0.08em;text-transform:uppercase;line-height:1.6}.body{font-size:10pt;line-height:1.85;white-space:pre-wrap;font-family:'Courier New',monospace;color:#1e293b}.footer{border-top:1px solid #e2e8f0;margin-top:32px;padding-top:14px;display:flex;justify-content:space-between;font-size:8pt;color:#94A3B8}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><div class="page"><div class="header"><div class="logo">Com<span>plai</span></div><div class="meta">NDIS AI Documentation<br>Generated: ${now()}<br>Review before submission</div></div><div class="body">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div><div class="footer"><span>Complai · getcomplai.com.au</span><span style="color:#10B981;font-weight:600">✓ ${now()}</span></div></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a2e}.page{max-width:750px;margin:0 auto;padding:40px 48px}.header{border-bottom:3px solid #0891B2;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:22pt;font-weight:800;color:#0891B2}.logo span{color:#00D4FF}.meta{font-size:9pt;color:#64748B;text-align:right;letter-spacing:0.08em;text-transform:uppercase;line-height:1.6}.body{font-size:10.5pt;line-height:1.9;white-space:pre-wrap;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b}.footer{border-top:1px solid #e2e8f0;margin-top:32px;padding-top:14px;display:flex;justify-content:space-between;font-size:8pt;color:#94A3B8}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><div class="page"><div class="header"><div class="logo">Com<span>plai</span></div><div class="meta">NDIS AI Documentation<br>Generated: ${now()}<br>Review before submission</div></div><div class="body">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div><div class="footer"><span>Complai · getcomplai.com.au</span><span style="color:#10B981;font-weight:600">✓ ${now()}</span></div></div></body></html>`;
   const w=window.open(URL.createObjectURL(new Blob([html],{type:"text/html"})),"_blank");
   if(w) w.onload=()=>setTimeout(()=>w.print(),400);
 }
@@ -789,12 +789,31 @@ function CompliancePanel({compliance}){
   const [show,setShow]=useState(false);
   const sc=compliance.score;
   const col=sc>=80?"#10B981":sc>=58?"#F59E0B":"#EF4444";
+  const scoreMsg=sc>=80
+    ? "This note meets NDIS Practice Standards and is ready to submit. All critical audit criteria are satisfied."
+    : sc>=58
+    ? "This note needs minor fixes before submission. Review the failed criteria below and apply the suggested corrections."
+    : "This note is not audit-ready. Multiple criteria have failed — address all issues before submitting to avoid compliance risk.";
   return h("div",null,
     h("div",{className:"score-block"},
       h(ScoreRing,{score:sc}),
-      h("div",null,
+      h("div",{style:{flex:1}},
         h("div",{className:"score-title"},compliance.status),
         h("div",{className:"score-sub"},`${compliance.checks.filter(c=>c.pass).length} of 12 criteria passed`),
+        h("div",{style:{fontSize:11,color:col,marginTop:6,lineHeight:1.5}},scoreMsg),
+      ),
+    ),
+    h("div",{style:{
+      display:"flex",gap:8,marginBottom:12,padding:"8px 10px",
+      background:"#00D4FF08",border:"1px solid #00D4FF22",borderRadius:8,
+    }},
+      h("div",{style:{fontSize:11,color:"var(--muted)",lineHeight:1.6}},
+        h("span",{style:{color:"#10B981",fontWeight:700}},"80–100% Compliant"),
+        " — safe to submit  ",
+        h("span",{style:{color:"#F59E0B",fontWeight:700}},"58–79% Needs Review"),
+        " — fix before submitting  ",
+        h("span",{style:{color:"#EF4444",fontWeight:700}},"<58% Non-Compliant"),
+        " — audit risk",
       ),
     ),
     h("div",{className:"check-pills"},
@@ -1154,13 +1173,39 @@ const TABS=[{id:"notes",label:"Notes",icon:"📋"},{id:"incident",label:"Inciden
 function App(){
   const [tab,setTab]=useState("notes");
   const switchTab=useCallback(t=>{setTab(t);window.scrollTo({top:0,behavior:"instant"});},[]);
+
+  function share(){
+    if(navigator.share){
+      navigator.share({
+        title:"Complai — NDIS Documentation",
+        text:"Free tool that turns rough shift notes into audit-ready NDIS progress notes with a 12-point compliance check.",
+        url:"https://getcomplai.com.au",
+      }).catch(()=>{});
+    } else {
+      navigator.clipboard&&navigator.clipboard.writeText("https://getcomplai.com.au");
+      alert("Link copied! Share getcomplai.com.au with your colleagues.");
+    }
+  }
+
   return h(React.Fragment,null,
     h("div",{className:"topbar"},
       h("div",{className:"brand"},
         h("div",{className:"brand-icon"},"C"),
         h("div",null,h("div",{className:"brand-name"},"Complai"),h("div",{className:"brand-sub"},"NDIS Docs")),
       ),
-      h("div",{className:"status"},h("div",{className:"dot"}),h("span",{className:"dot-lbl"},"Ready")),
+      h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+        h("button",{
+          onClick:share,
+          style:{
+            background:"transparent",border:"1px solid var(--bdr)",
+            borderRadius:8,color:"var(--muted)",
+            fontSize:12,fontWeight:600,padding:"6px 12px",
+            cursor:"pointer",fontFamily:"inherit",
+            display:"flex",alignItems:"center",gap:5,
+          }
+        },"↗ Share"),
+        h("div",{className:"status"},h("div",{className:"dot"}),h("span",{className:"dot-lbl"},"Ready")),
+      ),
     ),
     tab==="notes"    && h(NoteScreen),
     tab==="incident" && h(IncidentScreen),
