@@ -633,7 +633,16 @@ function genPlan({name,age,disability,goals,strengths,challenges,supports}){
   const seen=new Set();
   const spellChanges=allC.filter(c=>{const k=c.from.toLowerCase()+"→"+c.to.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
   const first=(name||"the participant").split(" ")[0];
-  const note=`NDIS PARTICIPANT SUPPORT PLAN\n══════════════════════════════════════════════\nParticipant:  ${name||"—"}${age?" | Age: "+age:""}\nDiagnosis:    ${disability||"—"}\nPlan Date:    ${now()}\nReview Date:  ${new Date(Date.now()+365*24*60*60*1000).toLocaleDateString("en-AU")}\n══════════════════════════════════════════════\n\n1. PARTICIPANT OVERVIEW\n──────────────────────────────────────────────\n${tc(first)} is a${age?" "+age+"-year-old":""} person living with ${disability}. This support plan was developed in partnership with ${first} to reflect their individual needs, goals, and aspirations. The plan is person-centred and strengths-based, aligned with ${first}'s NDIS funding and the NDIS Practice Standards.\n\n2. STRENGTHS & ABILITIES\n──────────────────────────────────────────────\n${(clean.strengths||"Motivated to achieve personal goals, engages positively with support workers, demonstrates resilience and adaptability").split(",").map(s=>`• ${tc(s.trim())}.`).join("\n")}\n\n3. SUPPORT NEEDS & CHALLENGES\n──────────────────────────────────────────────\n${(clean.challenges||"Daily living tasks, community access, communication and social participation").split(",").map(s=>`• ${tc(s.trim())}.`).join("\n")}\n\n4. NDIS GOALS (SMART)\n──────────────────────────────────────────────\nGoal 1 — Daily Living Independence\n${first} will increase independence in daily living tasks with decreasing support over 12 months.\n\nGoal 2 — Community Participation\n${first} will participate in at least two community activities per fortnight.\n\nGoal 3 — ${clean.goals?tc(clean.goals.split(/[.,]/)[0].trim()):"Skill Development"}\n${first} will ${clean.goals?clean.goals.split(/[.,]/)[0].trim().toLowerCase():"develop functional skills to support greater independence"}.\n\n5. SUPPORT STRATEGIES\n──────────────────────────────────────────────\n• Provide verbal prompting and physical guidance as needed\n• Use visual schedules and step-by-step instructions\n• Encourage and celebrate achievements to build confidence\n• Facilitate community access using positive behaviour support strategies\n• Collaborate with allied health to implement therapy recommendations\n\n6. CURRENT SUPPORTS\n──────────────────────────────────────────────\n${clean.supports||"Support worker assistance, family/carer support, allied health services."}\n\n7. REVIEW SCHEDULE\n──────────────────────────────────────────────\n• Monthly:    Progress note review with Team Leader\n• Quarterly:  Goal progress review with participant and coordinator\n• Annually:   Full plan review with participant, family and NDIS planner\n\n──────────────────────────────────────────────\nPrepared by: Support Coordinator\nDate:        ${now()}\nStatus:      DRAFT — Pending participant and guardian sign-off\n══════════════════════════════════════════════`;
+  const reviewDate=new Date(Date.now()+365*24*60*60*1000).toLocaleDateString("en-AU");
+
+  // Parse goals into numbered list
+  const goalsList=(clean.goals||"Increase independence in daily living tasks").split(/[,\n]/).map(s=>s.trim()).filter(s=>s.length>4);
+  const strengthsList=(clean.strengths||"Motivated to achieve personal goals, engages positively with support workers").split(/[,\n]/).map(s=>s.trim()).filter(s=>s.length>2);
+  const challengesList=(clean.challenges||"Daily living tasks, community access").split(/[,\n]/).map(s=>s.trim()).filter(s=>s.length>2);
+
+  const goalsSection=goalsList.map((g,i)=>`Goal ${i+1} — ${tc(g)}\n${first} will ${g.toLowerCase().replace(/^to /,"")} with decreasing support over the next 12 months. Progress will be measured through regular observation and documented in progress notes at each support session.`).join("\n\n");
+
+  const note=`NDIS PARTICIPANT SUPPORT PLAN\n══════════════════════════════════════════════\nParticipant:   ${name||"—"}${age?" | Age: "+age:""}\nDiagnosis:     ${disability||"—"}\nPlan Date:     ${now()}\nReview Date:   ${reviewDate}\nPlan Status:   DRAFT — Pending sign-off\n══════════════════════════════════════════════\n\n1. PARTICIPANT OVERVIEW\n──────────────────────────────────────────────\n${tc(first)} is a${age?" "+age+"-year-old":""} person living with ${disability}. This support plan has been developed collaboratively with ${first} to reflect their individual goals, strengths, and support needs. The plan is person-centred and strengths-based, consistent with the NDIS Practice Standards and ${first}'s current funding allocation.\n\nThis plan will be reviewed ${reviewDate} or earlier if ${first}'s circumstances or goals change significantly.\n\n2. STRENGTHS & ABILITIES\n──────────────────────────────────────────────\n${first} brings a range of strengths and abilities that will support achievement of their goals:\n\n${strengthsList.map(s=>`• ${tc(s)}.`).join("\n")}\n\nThese strengths will be actively built upon during support sessions to promote independence and confidence.\n\n3. SUPPORT NEEDS & CHALLENGES\n──────────────────────────────────────────────\nThe following areas have been identified where ${first} requires additional support:\n\n${challengesList.map(s=>`• ${tc(s)}.`).join("\n")}\n\nSupport strategies will be tailored to address these needs while respecting ${first}'s right to choice and control.\n\n4. NDIS GOALS (SMART)\n──────────────────────────────────────────────\n${goalsSection}\n\n5. SUPPORT STRATEGIES\n──────────────────────────────────────────────\nThe following strategies will be used across all support sessions:\n\n• Provide verbal prompting and physical guidance as required, fading support as ${first}'s skills develop\n• Use visual schedules, checklists, and step-by-step instructions to support task completion\n• Celebrate achievements and reinforce positive outcomes to build confidence and motivation\n• Implement strategies consistent with any behaviour support plan in place\n• Facilitate community access using least-restrictive, person-centred approaches\n• Collaborate with allied health professionals to implement therapy recommendations\n• Document progress toward each goal in every progress note\n\n6. CURRENT SUPPORTS\n──────────────────────────────────────────────\n${clean.supports||"Support worker assistance, family/carer support, allied health services."}\n\n7. CONSENT & RIGHTS\n──────────────────────────────────────────────\n${first} has been involved in the development of this support plan and understands their right to:\n• Make decisions about their own supports and daily life\n• Raise concerns or complaints without fear of negative consequences\n• Request a review of this plan at any time\n• Have their privacy and confidentiality respected at all times\n\n8. REVIEW SCHEDULE\n──────────────────────────────────────────────\n• Monthly:     Progress note review with Team Leader\n• Quarterly:   Goal progress review with ${first} and Support Coordinator\n• Annually:    Full plan review with ${first}, family/guardian, and NDIS planner\n• As needed:   Unscheduled review if goals, circumstances or needs change\n\n──────────────────────────────────────────────\nPrepared by:   Support Coordinator\nDate:          ${now()}\nParticipant:   ${name||"—"} (signature required)\nGuardian:      ________________________\nStatus:        DRAFT — Pending participant and guardian sign-off\n══════════════════════════════════════════════`;
   return {note,spellChanges};
 }
 
@@ -660,14 +669,14 @@ function checkCompliance(noteText,fd){
 }
 
 function exportPDF(content,title){
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a2e}.page{max-width:750px;margin:0 auto;padding:40px 48px}.header{border-bottom:3px solid #0891B2;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:22pt;font-weight:800;color:#0891B2}.logo span{color:#00D4FF}.meta{font-size:9pt;color:#64748B;text-align:right;letter-spacing:0.08em;text-transform:uppercase;line-height:1.6}.body{font-size:10pt;line-height:1.85;white-space:pre-wrap;font-family:'Courier New',monospace;color:#1e293b}.footer{border-top:1px solid #e2e8f0;margin-top:32px;padding-top:14px;display:flex;justify-content:space-between;font-size:8pt;color:#94A3B8}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><div class="page"><div class="header"><div class="logo">Com<span>plai</span></div><div class="meta">NDIS AI Documentation<br>Generated: ${now()}<br>Review before submission</div></div><div class="body">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div><div class="footer"><span>Complai · complai.com.au</span><span style="color:#10B981;font-weight:600">✓ ${now()}</span></div></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a2e}.page{max-width:750px;margin:0 auto;padding:40px 48px}.header{border-bottom:3px solid #0891B2;padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:22pt;font-weight:800;color:#0891B2}.logo span{color:#00D4FF}.meta{font-size:9pt;color:#64748B;text-align:right;letter-spacing:0.08em;text-transform:uppercase;line-height:1.6}.body{font-size:10pt;line-height:1.85;white-space:pre-wrap;font-family:'Courier New',monospace;color:#1e293b}.footer{border-top:1px solid #e2e8f0;margin-top:32px;padding-top:14px;display:flex;justify-content:space-between;font-size:8pt;color:#94A3B8}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><div class="page"><div class="header"><div class="logo">Com<span>plai</span></div><div class="meta">NDIS AI Documentation<br>Generated: ${now()}<br>Review before submission</div></div><div class="body">${content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div><div class="footer"><span>Complai · getcomplai.com.au</span><span style="color:#10B981;font-weight:600">✓ ${now()}</span></div></div></body></html>`;
   const w=window.open(URL.createObjectURL(new Blob([html],{type:"text/html"})),"_blank");
   if(w) w.onload=()=>setTimeout(()=>w.print(),400);
 }
 
 // ── History (localStorage) ────────────────────────────────────────────────
 const HISTORY_KEY = "complai_history_v1";
-const MAX_HISTORY = 10;
+const MAX_HISTORY = 50;
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -814,15 +823,50 @@ function CompliancePanel({compliance}){
 }
 
 function ResultView({title,out,spellChanges,compliance,onBack}){
+  const [editing,setEditing]=useState(false);
+  const [text,setText]=useState(out);
+  const [copied,setCopied]=useState(false);
+
+  function copy(){
+    navigator.clipboard&&navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(()=>setCopied(false),2000);
+  }
+
   return h("div",{className:"page fade"},
     h("button",{className:"btn-back",onClick:onBack},"← Back"),
     h(SpellBanner,{changes:spellChanges}),
     h("div",{className:"card"},
-      h("div",{className:"card-title"},title),
-      h("div",{className:"result-box"},out),
+      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}},
+        h("div",{className:"card-title",style:{marginBottom:0}},title),
+        h("button",{
+          onClick:()=>setEditing(p=>!p),
+          style:{
+            background:editing?"#00D4FF18":"transparent",
+            border:`1px solid ${editing?"#00D4FF44":"var(--bdr)"}`,
+            borderRadius:6,color:editing?"var(--accent)":"var(--muted)",
+            fontSize:11,fontWeight:600,padding:"4px 10px",
+            cursor:"pointer",fontFamily:"inherit",
+            letterSpacing:".05em",textTransform:"uppercase",
+          }
+        },editing?"✓ Done":"✏ Edit"),
+      ),
+      editing
+        ? h("textarea",{
+            className:"inp",
+            style:{minHeight:"320px",fontFamily:"'Courier New',monospace",fontSize:"11.5px",lineHeight:1.85},
+            value:text,
+            onChange:ev=>setText(ev.target.value),
+            autoCorrect:"off",spellCheck:true,
+          })
+        : h("div",{className:"result-box"},text),
       h("div",{className:"btn-row"},
-        h("button",{className:"btn-ghost",onClick:()=>navigator.clipboard&&navigator.clipboard.writeText(out)},"📋 Copy"),
-        h("button",{className:"btn-ghost",style:{color:"#00D4FF",borderColor:"#00D4FF44"},onClick:()=>exportPDF(out,title)},"🖨 PDF"),
+        h("button",{
+          className:"btn-ghost",
+          style:copied?{color:"#10B981",borderColor:"#10B98144"}:{},
+          onClick:copy
+        },copied?"✓ Copied":"📋 Copy"),
+        h("button",{className:"btn-ghost",style:{color:"#00D4FF",borderColor:"#00D4FF44"},onClick:()=>exportPDF(text,title)},"🖨 PDF"),
       ),
     ),
     compliance&&h("div",{className:"card"},
@@ -970,10 +1014,27 @@ function CarePlanScreen(){
   const [f,setF]=useState({name:"",age:"",disability:"",goals:"",strengths:"",challenges:"",supports:""});
   const set=k=>ev=>setF(p=>({...p,[k]:ev.target.value}));
 
+  const CARE_DEMO = {
+    name:"Jack Thompson", age:"34", disability:"Autism Spectrum Disorder (Level 2)",
+    goals:"Increase independence in meal preparation and grocery shopping, develop public transport skills to travel independently to community activities",
+    strengths:"Excellent memory and attention to detail, strong interest in cooking and technology, motivated to build independence, responds well to routine and visual supports",
+    challenges:"Requires prompting for personal hygiene tasks, difficulty with unexpected changes to routine, anxiety in busy public environments, needs support with budgeting and financial management",
+    supports:"Support worker 4 sessions per week, Occupational Therapist monthly, Speech Therapist fortnightly, family support from parents on weekends",
+  };
+
+  function loadDemo(){ setF(CARE_DEMO); window.scrollTo({top:0,behavior:"smooth"}); }
   function build(){const {note,spellChanges}=genPlan(f);setResult({out:note,spellChanges});setView("result");window.scrollTo({top:0,behavior:"smooth"});}
   if(view==="result") return h(ResultView,{title:"Care Plan",out:result.out,spellChanges:result.spellChanges,compliance:null,onBack:()=>{setView("form");window.scrollTo({top:0,behavior:"smooth"});}});
 
   return h("div",{className:"page fade"},
+
+    h("div",null,
+      h("div",{className:"demo-lbl"},"✦ Try a demo"),
+      h("div",{className:"demo-bar"},
+        h("button",{className:"demo-chip",onClick:loadDemo},"Jack Thompson — ASD Level 2"),
+      ),
+    ),
+
     h("div",{className:"card"},
       h("div",{className:"card-title"},"Participant"),
       h("div",{className:"row2"},
@@ -984,7 +1045,11 @@ function CarePlanScreen(){
     ),
     h("div",{className:"card"},
       h("div",{className:"card-title"},"Goals & Strengths"),
-      h("div",{className:"field"},h("label",{className:"lbl"},"Goals & aspirations"),h("textarea",{className:"inp",style:{minHeight:"110px"},placeholder:"What does the participant want to achieve?",value:f.goals,onChange:set("goals"),spellCheck:true,autoCapitalize:"sentences"})),
+      h("div",{className:"alert a-accent",style:{marginBottom:14}},
+        h("span",null,"✏️"),
+        h("span",null,"Write naturally — Complai structures your notes into a formal NDIS-compliant care plan."),
+      ),
+      h("div",{className:"field"},h("label",{className:"lbl"},"Goals & aspirations"),h("textarea",{className:"inp",style:{minHeight:"110px"},placeholder:"What does the participant want to achieve? e.g. Learn to catch the bus independently, improve meal preparation skills...",value:f.goals,onChange:set("goals"),spellCheck:true,autoCapitalize:"sentences"})),
       h("div",{className:"field",style:{marginBottom:0}},h("label",{className:"lbl"},"Strengths & interests"),h("textarea",{className:"inp",style:{minHeight:"90px"},placeholder:"e.g. Loves music, great memory, enjoys cooking...",value:f.strengths,onChange:set("strengths"),spellCheck:true})),
     ),
     h("div",{className:"card"},
