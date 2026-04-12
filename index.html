@@ -275,6 +275,63 @@ select.inp{
 @keyframes fadeUp{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
 /* Reduce motion */
 @media(prefers-reduced-motion:reduce){.fade{animation:none;}}
+
+/* ══ Welcome modal ═══════════════════════════════════════════════════════ */
+.welcome-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(0,0,0,0.75);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0 16px calc(var(--sab) + 16px);
+  animation:fadeIn .25s ease both;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.welcome-overlay.hidden{display:none;}
+.welcome-sheet{
+  background:var(--card);
+  border:1px solid var(--bdr);
+  border-radius:24px 24px 16px 16px;
+  padding:28px 24px 24px;
+  width:100%;max-width:480px;
+  animation:slideUp .3s ease both;
+}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0;}to{transform:none;opacity:1;}}
+.welcome-logo{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.welcome-icon{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,#00D4FF,#0891B2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;color:#000;
+}
+.welcome-brand{font-size:22px;font-weight:700;color:var(--txt);letter-spacing:-.3px;}
+.welcome-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+.welcome-tagline{font-size:17px;font-weight:600;color:var(--txt);line-height:1.45;margin-bottom:8px;}
+.welcome-desc{font-size:13px;color:var(--soft);line-height:1.65;margin-bottom:18px;}
+.welcome-features{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.welcome-feat{display:flex;align-items:flex-start;gap:10px;}
+.welcome-feat-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.welcome-feat-text{font-size:13px;color:var(--soft);line-height:1.5;}
+.welcome-feat-text strong{color:var(--txt);font-weight:600;}
+.welcome-valmar{
+  background:#EF444410;border:1px solid #EF444430;
+  border-radius:8px;padding:10px 12px;
+  font-size:11px;color:#FCA5A5;line-height:1.6;
+  margin-bottom:20px;
+}
+.welcome-cta{
+  display:block;width:100%;padding:15px;
+  background:var(--accent);color:#000;
+  border:none;border-radius:12px;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 14px #00D4FF25;
+  margin-bottom:10px;
+}
+.welcome-demo{
+  display:block;width:100%;padding:11px;
+  background:transparent;color:var(--soft);
+  border:1px solid var(--bdr);border-radius:12px;
+  font-size:13px;cursor:pointer;font-family:inherit;
+}
 </style>
 </head>
 <body>
@@ -294,6 +351,40 @@ select.inp{
     </div>
   </div>
   <button class="ios-close" id="ios-close">✕</button>
+</div>
+<div id="welcome-overlay" class="welcome-overlay hidden">
+  <div class="welcome-sheet">
+    <div class="welcome-logo">
+      <div class="welcome-icon">C</div>
+      <div>
+        <div class="welcome-brand">Complai</div>
+        <div class="welcome-sub">NDIS AI Documentation</div>
+      </div>
+    </div>
+    <div class="welcome-tagline">Turn rough shift notes into audit-ready NDIS documents</div>
+    <div class="welcome-desc">Complai helps support workers document accurately and checks every note against NDIS audit standards before it's submitted.</div>
+    <div class="welcome-features">
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">📋</div>
+        <div class="welcome-feat-text"><strong>Progress notes</strong> — structured, compliant, professional</div>
+      </div>
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">✅</div>
+        <div class="welcome-feat-text"><strong>12-point compliance check</strong> — instant audit score on every note</div>
+      </div>
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">⚠️</div>
+        <div class="welcome-feat-text"><strong>Incident reports</strong> — severity-aware, NDIS Commission format</div>
+      </div>
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">📄</div>
+        <div class="welcome-feat-text"><strong>Care plans</strong> — SMART goal-based support plans</div>
+      </div>
+    </div>
+    <div class="welcome-valmar">⚖️ <strong>January 2025:</strong> Federal Court imposed a $1.9M penalty on Valmar Support Services for documentation failures. Complai helps make sure your notes are always audit-ready.</div>
+    <button class="welcome-cta" id="welcome-start">✦ Get Started — It's Free</button>
+    <button class="welcome-demo" id="welcome-demo">Try a demo scenario first</button>
+  </div>
 </div>
 <div id="root"></div>
 
@@ -395,13 +486,36 @@ window.addEventListener('appinstalled', () => {
   if (isIos && !isInStandaloneMode && !dismissed) {
     const bar = document.getElementById('ios-bar');
     const close = document.getElementById('ios-close');
-    // Small delay so page renders first
     setTimeout(() => bar.classList.add('show'), 1200);
     close.addEventListener('click', () => {
       bar.classList.remove('show');
       sessionStorage.setItem('ios_bar_dismissed', '1');
     });
   }
+})();
+
+// ══ Welcome modal ════════════════════════════════════════════════════════
+(function() {
+  const overlay = document.getElementById('welcome-overlay');
+  const btnStart = document.getElementById('welcome-start');
+  const btnDemo = document.getElementById('welcome-demo');
+  const seen = localStorage.getItem('complai_welcomed');
+  if (!seen) {
+    overlay.classList.remove('hidden');
+  }
+  function dismiss() {
+    overlay.classList.add('hidden');
+    localStorage.setItem('complai_welcomed', '1');
+  }
+  btnStart.addEventListener('click', dismiss);
+  btnDemo.addEventListener('click', function() {
+    dismiss();
+    // Small delay then trigger first demo scenario
+    setTimeout(() => {
+      const chips = document.querySelectorAll('.demo-chip');
+      if (chips && chips[0]) chips[0].click();
+    }, 300);
+  });
 })();
 </script>
 
